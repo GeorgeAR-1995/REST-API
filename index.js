@@ -4,6 +4,7 @@ const app = express();
 
 app.use(express.json());
 
+//Database
 const items = [
     { id: 1, name: 'Golf Ball' },
     { id: 2, name: '9 Iron' },
@@ -12,8 +13,9 @@ const items = [
     { id: 5, name: 'Driver' },
 ]
 
+//Get Routes
 app.get('/', (req, res) => {
-    res.send('Hello World');
+    res.send('Golf Shop');
 });
 
 app.get('/api/items', (req, res) => {
@@ -30,6 +32,7 @@ app.get('/api/items/:id', (req, res) => {
 });
 
 
+//Post Route
 app.post('/api/items', (req, res) => {
     const schema = Joi.object({
         name: Joi.string().min(3).required()
@@ -51,10 +54,12 @@ app.post('/api/items', (req, res) => {
 })
 
 
+//Put Route
 app.put('/api/items/:id', (req, res) => {
     const item = items.find(c => c.id === parseInt(req.params.id));
     if (!item) {
         res.status(404).send('Item does not exist.')
+        return;
     }
 
     const schema = Joi.object({
@@ -73,19 +78,21 @@ app.put('/api/items/:id', (req, res) => {
 });
 
 
+//Delete Route
 app.delete('/api/items/:id', (req, res) => {
     const item = items.find(c => c.id === parseInt(req.params.id));
     if (!item) {
-        res.status(404).send('Item does not exist.')
+        res.status(404).send('Item does not exist.');
+        return;
     }
 
     const index = items.indexOf(item);
     items.splice(index, 1);
 
     res.send(item);
-
-
 })
+
+
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Listening on port ${port}...`));
