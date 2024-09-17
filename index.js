@@ -1,7 +1,7 @@
 const express = require('express');
-
 const app = express();
 
+app.use(express.json());
 
 const items = [
     { id: 1, name: 'Golf Ball' },
@@ -29,7 +29,17 @@ app.get('/api/items/:id', (req, res) => {
 });
 
 app.post('/api/items', (req, res) => {
+    if (!req.body.name || req.body.name.length < 3) {
+        res.status(400).send('Name of item needed and must be 3+ characters.');
+        return;
+    }
 
+    const item = {
+        id: items.length + 1,
+        name: req.body.name
+    };
+    items.push(item);
+    res.send(item);
 })
 
 const port = process.env.PORT || 3000;
