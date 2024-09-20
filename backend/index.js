@@ -3,15 +3,19 @@ const express = require('express');
 const app = express();
 
 app.use(express.json());
+app.use(express.static('public'));
+
+const cors = require('cors');
+app.use(cors());
 
 //Database
 const items = [
-    { id: 1, name: 'Golf Ball' },
-    { id: 2, name: '9 Iron' },
-    { id: 3, name: 'Tees' },
-    { id: 4, name: 'Shoes' },
-    { id: 5, name: 'Driver' },
-]
+    { id: 1, name: 'Golf Ball', description: `High-quality, beginner's ball x6`, price: '£30', quantity: "500", image: "http://localhost:3000/images/golfball.jpeg" },
+    { id: 2, name: 'Iron set', description: `Beginner's iron set`, price: '£250', quantity: "25", image: "http://localhost:3000/images/golfironset.jpeg" },
+    { id: 3, name: 'Tees', description: `High-quality, bamboo tees x25`, price: '£10', quantity: "1000", image: "http://localhost:3000/images/golftees.jpeg" },
+    { id: 4, name: 'Shoes', description: `Comfy golf shoes, spikeless`, price: '£55', quantity: "50", image: "http://localhost:3000/images/golfshoes.jpeg" },
+    { id: 5, name: 'Driver', description: `Forgiving driver for beginner's`, price: '£199', quantity: "100", image: "http://localhost:3000/images/golfdriver.jpeg" },
+];
 
 //Get Routes
 app.get('/', (req, res) => {
