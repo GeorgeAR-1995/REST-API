@@ -35,7 +35,7 @@ function Home() {
                     <div className="card-body">
                     <h5 className="card-title">{product.name}</h5>
                     <p className="card-text">{product.description}</p>
-                    <p className="card-text"><strong>Price: </strong>{product.price}</p>
+                    <p className="card-text"><strong>Price: </strong>£{Number(product.price).toFixed(2)}</p>
                     <p className="card-text"><strong>Quantity: </strong>{product.quantity}</p>
                     </div>
                 </div>

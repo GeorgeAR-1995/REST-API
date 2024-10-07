@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import ImageUploader from './ImageUploader';
 
 function Admin() {
   const [newProduct, setNewProduct] = useState({
@@ -6,11 +7,29 @@ function Admin() {
     description: '',
     price: '',
     quantity: '',
-    image: '',
+    image: null,
   });
 
+  const [products, setProducts] = useState([]);  // State to store the list of products
   const [updateId, setUpdateId] = useState(null);
   const [updateQuantity, setUpdateQuantity] = useState('');
+  const [updatePrice, setUpdatePrice] = useState('');
+  const [deleteId, setDeleteId] = useState(''); // State for deleting products
+
+  // Fetch products from the backend API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/items');
+        const data = await response.json();
+        setProducts(data); // Set fetched products to state
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      }
+    };
+
+    fetchProducts();
+  }, []);  // Empty dependency array ensures this runs only once on mount
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -18,21 +37,29 @@ function Admin() {
   };
 
   const addNewProduct = async () => {
-    // Make a POST request to add the new product
+    const formData = new FormData();
+    if (newProduct.image) {
+      formData.append('image', newProduct.image);
+    }
+    formData.append('name', newProduct.name);
+    formData.append('description', newProduct.description);
+    formData.append('price', newProduct.price);
+    formData.append('quantity', newProduct.quantity);
+
     try {
       const response = await fetch('http://localhost:3000/api/items', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newProduct),
+        body: formData,
       });
+
       if (response.ok) {
-        // Reset the form
-        setNewProduct({ name: '', description: '', price: '', quantity: '', image: '' });
-        // Optionally, refresh the product list in Home component
+        setNewProduct({ name: '', description: '', price: '', quantity: '', image: null });
+        alert('Product added successfully!');
+        // Refetch the products to update the table after adding a new product
+        const data = await response.json();
+        setProducts((prev) => [...prev, data]);  // Add the newly created product to the table
       } else {
-        console.error('Failed to add product');
+        console.error('Failed to add product', await response.text());
       }
     } catch (error) {
       console.error('Error:', error);
@@ -40,9 +67,13 @@ function Admin() {
   };
 
   const adjustQuantity = async () => {
-    // Make a PUT request to update the quantity
+    if (!updateId || !updateQuantity) {
+      console.error('Update ID and Quantity must be provided.');
+      return;
+    }
+
     try {
-      const response = await fetch(`http://localhost:3000/api/items/${updateId}`, {
+      const response = await fetch(`http://localhost:3000/api/items/${updateId}/quantity`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -50,7 +81,17 @@ function Admin() {
         body: JSON.stringify({ quantity: updateQuantity }),
       });
       if (response.ok) {
-        // Optionally, refresh the product list in Home component
+        console.log('Quantity updated successfully');
+        setUpdateId(null);
+        setUpdateQuantity('');
+        // Update the products in the table
+        setProducts((prev) =>
+          prev.map((product) =>
+            product.id === parseInt(updateId)
+              ? { ...product, quantity: updateQuantity }
+              : product
+          )
+        );
       } else {
         console.error('Failed to adjust quantity');
       }
@@ -59,9 +100,96 @@ function Admin() {
     }
   };
 
+  const adjustPrice = async () => {
+    if (!updateId || !updatePrice) {
+      console.error('Update ID and Price must be provided.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:3000/api/items/${updateId}/price`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ price: updatePrice }),
+      });
+      if (response.ok) {
+        console.log('Price updated successfully');
+        setUpdateId(null);
+        setUpdatePrice('');
+        // Update the products in the table
+        setProducts((prev) =>
+          prev.map((product) =>
+            product.id === parseInt(updateId) ? { ...product, price: updatePrice } : product
+          )
+        );
+      } else {
+        console.error('Failed to adjust price');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  const deleteProduct = async () => {
+    if (!deleteId) {
+      console.error('Delete ID must be provided.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:3000/api/items/${deleteId}`, {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        console.log('Product deleted successfully');
+        setDeleteId('');
+        // Remove the deleted product from the table
+        setProducts((prev) => prev.filter((product) => product.id !== parseInt(deleteId)));
+      } else {
+        console.error('Failed to delete product');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
   return (
-    <div>
+    <div style={{ marginLeft: '10px'}}>
       <h2>Admin Panel</h2>
+
+      {/* Table to display products on admin page*/}
+      <h3>Product List</h3>
+      <table border="2"
+      style={{ borderCollapse: 'collapse', width: '50%'}}>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Price (£)</th>
+            <th>Quantity</th>
+          </tr>
+        </thead>
+        <tbody>
+          {products.length > 0 ? (
+            products.map((product) => (
+              <tr key={product.id}>
+                <td>{product.id}</td>
+                <td>{product.name}</td>
+                <td>{product.description}</td>
+                <td>£{Number(product.price).toFixed(2)}</td>
+                <td>{product.quantity}</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="5">No products available</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
 
       <h3>Add New Product</h3>
       <input
@@ -79,7 +207,7 @@ function Admin() {
         onChange={handleInputChange}
       />
       <input
-        type="text"
+        type="number"
         name="price"
         placeholder="Price"
         value={newProduct.price}
@@ -92,14 +220,9 @@ function Admin() {
         value={newProduct.quantity}
         onChange={handleInputChange}
       />
-      <input
-        type="text"
-        name="image"
-        placeholder="Image URL"
-        value={newProduct.image}
-        onChange={handleInputChange}
-      />
-      <button onClick={addNewProduct}>Add Product</button>
+      <ImageUploader onUpload={(file) => setNewProduct((prev) => ({ ...prev, image: file }))} />
+
+      <button onClick={addNewProduct} disabled={!newProduct.image}>Add Product</button>
 
       <h3>Adjust Product Quantity</h3>
       <input
@@ -114,6 +237,29 @@ function Admin() {
         onChange={(e) => setUpdateQuantity(e.target.value)}
       />
       <button onClick={adjustQuantity}>Update Quantity</button>
+
+      <h3>Adjust Product Price</h3>
+      <input
+        type="number"
+        placeholder="Product ID"
+        onChange={(e) => setUpdateId(e.target.value)}
+      />
+      <input
+        type="number"
+        placeholder="New Price"
+        value={updatePrice}
+        onChange={(e) => setUpdatePrice(e.target.value)}
+      />
+      <button onClick={adjustPrice}>Update Price</button>
+
+      <h3>Delete Product</h3>
+      <input
+        type="number"
+        placeholder="Product ID"
+        value={deleteId}
+        onChange={(e) => setDeleteId(e.target.value)}
+      />
+      <button onClick={deleteProduct}>Delete Product</button>
     </div>
   );
 }
